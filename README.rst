@@ -4,6 +4,8 @@ tusfilter
 
 python wsgi filter for tus protocol 1.0.0, `the tus resumable upload standard`_.
 
+Fork of https://github.com/everydo/tusfilter with bugfixes for WebOb Request usage.
+
 .. _the tus resumable upload standard: http://tus.io/
 
 
@@ -12,7 +14,7 @@ install
 
 ::
 
-    pip install tusfilter
+    pip install tuswsgi
 
 
 Arguments
@@ -43,7 +45,7 @@ Example
 
 flask ::
 
-    from tusfilter import TusFilter
+    from tuswsgi import TusMiddleware
     from flask import Flask
 
     app = Flask(__name__)
@@ -53,7 +55,7 @@ flask ::
         # do something else
         return 'End of upload'
 
-    app.wsgi_app = TusFilter(
+    app.wsgi_app = TusMiddleware(
         app.wsgi_app,
         upload_path='/upload_resumable',
         tmp_dir='/tmp/upload',

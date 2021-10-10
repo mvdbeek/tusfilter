@@ -171,7 +171,7 @@ def b64_decode(s, encoding='utf-8'):
 Env = namedtuple('Env', ['req', 'resp', 'temp', 'info'])
 
 
-class TusFilter(object):
+class TusMiddleware(object):
     versions = ['1.0.0']
     checksum_algorithms = ['sha1']
     extensions = [

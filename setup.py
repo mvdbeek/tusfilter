@@ -9,7 +9,7 @@ with open(os.path.join(here, 'README.rst')) as f:
 
 
 setup(
-    name='tus-wsgi',
+    name='tuswsgi',
     version='0.5.2',
     description='python wsgi filter for tus protocol 1.0.0',
     long_description=long_description,

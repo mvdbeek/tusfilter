@@ -1,6 +1,6 @@
 import pytest
 from flask import Flask
-from tusfilter import TusFilter
+from tuswsgi import TusMiddleware
 
 
 
@@ -12,7 +12,7 @@ def create_app():
         # do something else
         return 'End of upload'
 
-    app.wsgi_app = TusFilter(
+    app.wsgi_app = TusMiddleware(
         app.wsgi_app,
         tmp_dir='/tmp/upload',
         upload_path='/upload_resumable',

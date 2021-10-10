@@ -1,5 +1,5 @@
 from flask import Flask
-from tusfilter import TusFilter
+from tuswsgi import TusMiddleware
 
 app = Flask(__name__)
 
@@ -10,7 +10,7 @@ def upload_resumable(tmpfile):
     return 'End of upload'
 
 
-app.wsgi_app = TusFilter(
+app.wsgi_app = TusMiddleware(
     app.wsgi_app,
     tmp_dir='/tmp/upload',
     upload_path='/upload_resumable',
