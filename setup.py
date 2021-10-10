@@ -8,13 +8,13 @@ with open(os.path.join(here, 'README.rst')) as f:
 
 
 setup(
-    name='tusfilter',
-    version='0.5.0',
+    name='tus-wsgi',
+    version='0.5.2',
     description='python wsgi filter for tus protocol 1.0.0',
     long_description=long_description,
-    url='https://github.com/everydo/tusfilter',
-    author='easydo.cn',
-    author_email='info@easydo.cn',
+    url='https://github.com/mvdbeek/tusfilter',
+    author='Marius van den Beek',
+    author_email='m.vandenbeek@gmail.com',
     keywords='tus wsgi filter',
     license='MIT',
 
