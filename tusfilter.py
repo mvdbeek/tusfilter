@@ -126,7 +126,7 @@ class InvalidContentTypeError(Error):
     reason = 'Invalid Content-Type Header'
 
 
-class ChecksumAlgorisumsNotSuppertedError(Error):
+class ChecksumAlgorithmNotSupportedError(Error):
     status_code = http.BAD_REQUEST
     reason = 'Bad Request'
 
@@ -178,7 +178,7 @@ Env = namedtuple('Env', ['req', 'resp', 'temp', 'info'])
 
 class TusFilter(object):
     versions = ['1.0.0']
-    checksum_algorisums = ['sha1']
+    checksum_algorithms = ['sha1']
     extensions = [
         'creation',
         'expiration',
@@ -259,7 +259,7 @@ class TusFilter(object):
     def options(self, env):
         env.resp.headers['Tus-Version'] = ','.join(self.versions)
         env.resp.headers['Tus-Max-Size'] = str(self.max_size)
-        env.resp.headers['Tus-Checksum-Algorithm'] = ','.join(self.checksum_algorisums)
+        env.resp.headers['Tus-Checksum-Algorithm'] = ','.join(self.checksum_algorithms)
         env.resp.headers['Tus-Extension'] = ','.join(self.extensions)
         env.resp.status = http.NO_CONTENT
 
@@ -307,9 +307,9 @@ class TusFilter(object):
 
         upload_checksum = env.req.headers.get('Upload-Checksum')
         if upload_checksum:
-            algorisum, checksum_base64 = upload_checksum.split(None, 1)
-            if algorisum not in self.checksum_algorisums:
-                raise ChecksumAlgorisumsNotSuppertedError()
+            algorithm, checksum_base64 = upload_checksum.split(None, 1)
+            if algorithm not in self.checksum_algorithms:
+                raise ChecksumAlgorithmNotSupportedError()
             checksum = standard_b64decode(checksum_base64.encode('utf-8'))
             body = env.req.body
             if checksum != hashlib.sha1(body).digest():
