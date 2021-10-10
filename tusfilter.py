@@ -1,23 +1,15 @@
 # coding: utf-8
 
 import hashlib
+import http.client
 import json
 import os
 import shutil
 import time
+import urllib.parse
 import uuid
 from base64 import standard_b64decode, standard_b64encode
 from collections import namedtuple
-
-try:
-    import httplib as http
-except ImportError:
-    import http.client as http
-
-try:
-    import urlparse
-except ImportError:
-    import urllib.parse as urlparse
 
 import webob
 
@@ -30,107 +22,107 @@ class Error(Exception):
 
 
 class NotFoundError(Error):
-    status_code = http.NOT_FOUND
+    status_code = http.client.NOT_FOUND
     reason = 'Not Found'
 
 
 class NotImplementedError(Error):
-    status_code = http.NOT_IMPLEMENTED
+    status_code = http.client.NOT_IMPLEMENTED
     reason = 'Feature Not Implemented'
 
 
 class InvalidUploadPathError(Error):
-    status_code = http.BAD_REQUEST
+    status_code = http.client.BAD_REQUEST
     reason = 'Invalid Upload Path'
 
 
 class MethodNotAllowedError(Error):
-    status_code = http.METHOD_NOT_ALLOWED
+    status_code = http.client.METHOD_NOT_ALLOWED
     reason = 'Method Not Allowed'
 
 
 class MissingVersionError(Error):
-    status_code = http.BAD_REQUEST
+    status_code = http.client.BAD_REQUEST
     reason = 'Missing Tus-Resumable Header'
 
 
 class UnsupportedVersionError(Error):
-    status_code = http.PRECONDITION_FAILED
+    status_code = http.client.PRECONDITION_FAILED
     reason = 'Precondition Failed'
 
 
 class InvalidUidError(Error):
-    status_code = http.BAD_REQUEST
+    status_code = http.client.BAD_REQUEST
     reason = 'Invalid Uid Part In Url'
 
 
 class MissingUidError(Error):
-    status_code = http.BAD_REQUEST
+    status_code = http.client.BAD_REQUEST
     reason = 'Missing Uid Part In Url'
 
 
 class MaxSizeExceededError(Error):
-    status_code = http.REQUEST_ENTITY_TOO_LARGE
+    status_code = http.client.REQUEST_ENTITY_TOO_LARGE
     reason = 'Request Entity Too Large'
 
 
 class InvalidUploadLengthError(Error):
-    status_code = http.BAD_REQUEST
+    status_code = http.client.BAD_REQUEST
     reason = 'Invalid Upload-Length Header'
 
 
 class ConflictUploadLengthError(Error):
-    status_code = http.BAD_REQUEST
+    status_code = http.client.BAD_REQUEST
     reason = 'Conflict Upload-Length'
 
 
 class MissingUploadLengthError(Error):
-    status_code = http.BAD_REQUEST
+    status_code = http.client.BAD_REQUEST
     reason = 'Missing Upload-Length Header'
 
 
 class ExceedUploadLengthError(Error):
-    status_code = http.BAD_REQUEST
+    status_code = http.client.BAD_REQUEST
     reason = 'Exceed Upload-Length'
 
 
 class InvalidUploadDeferLengthError(Error):
-    status_code = http.BAD_REQUEST
+    status_code = http.client.BAD_REQUEST
     reason = 'Invalid Upload-Defer-Length Header'
 
 
 class ConflictUploadDeferLengthError(Error):
-    status_code = http.BAD_REQUEST
+    status_code = http.client.BAD_REQUEST
     reason = 'Conflict Upload-Defer-Length Header'
 
 
 class InvalidUploadOffsetError(Error):
-    status_code = http.BAD_REQUEST
+    status_code = http.client.BAD_REQUEST
     reason = 'Invalid Upload-Offset Header'
 
 
 class ConflictUploadOffsetError(Error):
-    status_code = http.CONFLICT
+    status_code = http.client.CONFLICT
     reason = 'Conflict'
 
 
 class MissingUploadOffsetError(Error):
-    status_code = http.BAD_REQUEST
+    status_code = http.client.BAD_REQUEST
     reason = 'Missing Upload-Offset Header'
 
 
 class InvalidUploadMetadataError(Error):
-    status_code = http.BAD_REQUEST
+    status_code = http.client.BAD_REQUEST
     reason = 'Invalid Upload-Metadata Header'
 
 
 class InvalidContentTypeError(Error):
-    status_code = http.BAD_REQUEST
+    status_code = http.client.BAD_REQUEST
     reason = 'Invalid Content-Type Header'
 
 
 class ChecksumAlgorithmNotSupportedError(Error):
-    status_code = http.BAD_REQUEST
+    status_code = http.client.BAD_REQUEST
     reason = 'Bad Request'
 
 
@@ -140,27 +132,27 @@ class ChecksumMismatchError(Error):
 
 
 class FileLockedError(Error):
-    status_code = http.LOCKED
+    status_code = http.client.LOCKED
     reason = 'File Currently Locked'
 
 
 class UploadNotFinishedError(Error):
-    status_code = http.BAD_REQUEST
+    status_code = http.client.BAD_REQUEST
     reason = 'One Of The Partial Uploads Is Not Finished'
 
 
 class InvalidConcatError(Error):
-    status_code = http.BAD_REQUEST
+    status_code = http.client.BAD_REQUEST
     reason = 'Invalid Upload-Concat Header'
 
 
 class InvalidMethodError(Error):
-    status_code = http.FORBIDDEN
+    status_code = http.client.FORBIDDEN
     reason = 'Forbidden'
 
 
 class ModifyFinalError(Error):
-    status_code = http.FORBIDDEN
+    status_code = http.client.FORBIDDEN
     reason = 'Modifying A Final Upload Is Not Allowed'
 
 
@@ -222,7 +214,7 @@ class TusFilter(object):
             return resp(environ, start_response)
 
         app_resp = req.get_response(self.app)
-        if env.info.get('parts') and app_resp.status == http.OK:
+        if env.info.get('parts') and app_resp.status == http.client.OK:
             return resp(environ, start_response)
 
         return app_resp(environ, start_response)
@@ -264,7 +256,7 @@ class TusFilter(object):
         env.resp.headers['Tus-Max-Size'] = str(self.max_size)
         env.resp.headers['Tus-Checksum-Algorithm'] = ','.join(self.checksum_algorithms)
         env.resp.headers['Tus-Extension'] = ','.join(self.extensions)
-        env.resp.status = http.NO_CONTENT
+        env.resp.status = http.client.NO_CONTENT
 
     def post(self, env):
         if env.temp['uid']:
@@ -277,7 +269,7 @@ class TusFilter(object):
 
         env.resp.headers['Upload-Expires'] = self.get_fexpires(env)
         env.resp.headers['Location'] = self.api_base + '/'.join([self.upload_path, env.temp['uid']])
-        env.resp.status = http.CREATED
+        env.resp.status = http.client.CREATED
 
     def head(self, env):
         upload_offset = self.get_current_offset(env)
@@ -301,7 +293,7 @@ class TusFilter(object):
             env.resp.headers['Upload-Concat'] = 'final;' + ' '.join([self.get_url_from_uid(env, uid) for uid in parts])
 
         env.resp.headers['Cache-Control'] = 'no-store'
-        env.resp.status = http.OK
+        env.resp.status = http.client.OK
 
     def patch(self, env):
         if env.req.headers.get('Content-Type') != 'application/offset+octet-stream':
@@ -325,7 +317,7 @@ class TusFilter(object):
 
         env.resp.headers['Upload-Offset'] = str(current_offset)
         env.resp.headers['Upload-Expires'] = self.get_fexpires(env)
-        env.resp.status = http.NO_CONTENT
+        env.resp.status = http.client.NO_CONTENT
 
     def check_concatenation(self, env):
         upload_concat = env.req.headers.get('Upload-Concat')
@@ -391,7 +383,7 @@ class TusFilter(object):
         env.info['upload_metadata'] = upload_metadata
 
     def get_uid_from_url(self, url):
-        path = urlparse.urlparse(url).path
+        path = urllib.parse.urlparse(url).path
         uid = os.path.relpath(path, self.upload_path)
         if uid == '.':
             return None
@@ -407,7 +399,7 @@ class TusFilter(object):
 
     def delete(self, env):
         self.delete_files(env)
-        env.resp.status = http.NO_CONTENT
+        env.resp.status = http.client.NO_CONTENT
 
     def finish_upload(self, env):
         info_path = self.get_info_path(env)
