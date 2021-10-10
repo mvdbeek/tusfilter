@@ -1,5 +1,5 @@
-from tusfilter import TusFilter
 from flask import Flask
+from tusfilter import TusFilter
 
 app = Flask(__name__)
 

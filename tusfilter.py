@@ -1,14 +1,13 @@
 # coding: utf-8
 
-import os
-import time
-import json
-import uuid
-import webob
-import shutil
 import hashlib
-from collections import namedtuple
+import json
+import os
+import shutil
+import time
+import uuid
 from base64 import standard_b64decode, standard_b64encode
+from collections import namedtuple
 
 try:
     import httplib as http
@@ -19,6 +18,10 @@ try:
     import urlparse
 except ImportError:
     import urllib.parse as urlparse
+
+import webob
+
+DEFAULT_EXPIRE = 60 * 60 * 24 * 30
 
 
 class Error(Exception):
@@ -190,7 +193,7 @@ class TusFilter(object):
         # 'concatenation-unfinished',  # todo
     ]
 
-    def __init__(self, app, upload_path, api_base='', tmp_dir='/tmp/upload', expire=60*60*24*30, send_file=False, max_size=2**30):
+    def __init__(self, app, upload_path, api_base='', tmp_dir='/tmp/upload', expire=DEFAULT_EXPIRE, send_file=False, max_size=2**30):
         self.app = app
         self.tmp_dir = tmp_dir
         self.api_base = api_base
@@ -383,7 +386,7 @@ class TusFilter(object):
                 raise InvalidUploadMetadataError()
             try:
                 upload_metadata[k] = b64_decode(v)
-            except:
+            except Exception:
                 raise InvalidUploadMetadataError()
         env.info['upload_metadata'] = upload_metadata
 
