@@ -19,7 +19,7 @@ setup(
     keywords='tus wsgi filter',
     license='MIT',
 
-    py_modules=['tusfilter'],
+    py_modules=['tuswsgi'],
     install_requires=['WebOb'],
 
     classifiers=[
