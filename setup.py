@@ -10,7 +10,7 @@ with open(os.path.join(here, 'README.rst')) as f:
 
 setup(
     name='tuswsgi',
-    version='0.5.3',
+    version='0.5.4',
     description='python wsgi filter for tus protocol 1.0.0',
     long_description=long_description,
     url='https://github.com/mvdbeek/tusfilter',
