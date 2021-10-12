@@ -12,6 +12,7 @@ from base64 import standard_b64decode, standard_b64encode
 from collections import namedtuple
 
 import webob
+from webob.request import DisconnectionError
 
 DEFAULT_EXPIRE = 60 * 60 * 24 * 30
 
@@ -154,6 +155,11 @@ class InvalidMethodError(Error):
 class ModifyFinalError(Error):
     status_code = http.client.FORBIDDEN
     reason = 'Modifying A Final Upload Is Not Allowed'
+
+
+class ClientDisconnectedError(Error):
+    status_code = 499
+    reason = 'Client Disconnected'
 
 
 def b64_encode(s, encoding='utf-8'):
@@ -567,7 +573,10 @@ class TusMiddleware(object):
         if cur_length != -1 and length != cur_length:
             raise ConflictUploadLengthError()
 
-        body = env.req.body_file_seekable
+        try:
+            body = env.req.body_file_seekable
+        except DisconnectionError:
+            raise ClientDisconnectedError
         with open(fpath, 'ab+') as f:
             f.seek(0, os.SEEK_END)
             body.seek(0)
