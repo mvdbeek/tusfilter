@@ -214,8 +214,14 @@ class TusMiddleware(object):
             return resp(environ, start_response)
 
         app_resp = req.get_response(self.app)
-        if env.info.get('parts') and app_resp.status == http.client.OK:
+        if env.info.get('parts') and app_resp.status_int == http.client.OK:
             return resp(environ, start_response)
+
+        if app_resp.status_int == http.client.OK:
+            app_resp.status_code = resp.status_code
+            app_resp.status_int = resp.status_int
+            app_resp.status = resp.status
+            app_resp.headers.update(resp.headers)
 
         return app_resp(environ, start_response)
 
