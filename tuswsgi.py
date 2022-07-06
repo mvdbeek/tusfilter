@@ -3,6 +3,7 @@
 import hashlib
 import http.client
 import json
+import logging
 import os
 import shutil
 import time
@@ -14,7 +15,28 @@ from collections import namedtuple
 import webob
 from webob.request import DisconnectionError
 
+log = logging.getLogger(__name__)
+
 DEFAULT_EXPIRE = 60 * 60 * 24 * 30
+TUS_EXPOSE_HEADERS = ",".join(
+    [
+        "Location",
+        "Tus-Resumable",
+        "Tus-Version",
+        "Tus-Max-Size",
+        "Tus-Checksum-Algorithm",
+        "Tus-Extension",
+        "Upload-Expires",
+        "Upload-Offset",
+        "Upload-Defer-Length",
+        "Upload-Length",
+        "Upload-Metadata",
+        "Upload-Concat",
+        "Cache-Control",
+        "Content-Type",
+        "Upload-Checksum",
+    ]
+)
 
 
 class Error(Exception):
@@ -170,6 +192,29 @@ def b64_decode(s, encoding='utf-8'):
     return standard_b64decode(s.encode(encoding)).decode(encoding)
 
 
+def origin_hostname_is_allowed(origin, allowed_origin_hostnames):
+    # boil origin header down to hostname
+    origin = urllib.parse.urlparse(origin).hostname
+
+    # singular match
+    def matches_allowed_origin(origin, allowed_origin):
+        if isinstance(allowed_origin, str):
+            return origin == allowed_origin
+        match = allowed_origin.match(origin)
+        return match and match.group() == origin
+
+    # localhost uses no origin header (== null)
+    if not origin:
+        return False
+
+    # check for '*' or compare to list of allowed
+    for allowed_origin in allowed_origin_hostnames:
+        if allowed_origin == "*" or matches_allowed_origin(origin, allowed_origin):
+            return True
+
+    return False
+
+
 # req: webob request object
 # resp: webob response object
 # temp: temp data
@@ -191,7 +236,8 @@ class TusMiddleware(object):
         # 'concatenation-unfinished',  # todo
     ]
 
-    def __init__(self, app, upload_path, api_base='', tmp_dir='/tmp/upload', expire=DEFAULT_EXPIRE, send_file=False, max_size=2**30):
+    def __init__(self, app, upload_path, api_base='', tmp_dir='/tmp/upload', expire=DEFAULT_EXPIRE, send_file=False, max_size=2**30,
+                 allowed_origin_hostnames=None):
         self.app = app
         self.tmp_dir = tmp_dir
         self.api_base = api_base
@@ -199,6 +245,7 @@ class TusMiddleware(object):
         self.expire = expire
         self.send_file = send_file
         self.max_size = max_size
+        self.allowed_origin_hostnames = allowed_origin_hostnames
 
         if not os.path.exists(tmp_dir):
             os.makedirs(tmp_dir)
@@ -249,6 +296,13 @@ class TusMiddleware(object):
         version = version or self.versions[0]   # OPTIONS version maybe None
         env.temp['version'] = version
         env.resp.headers['Tus-Resumable'] = version
+
+        # set CORS headers, if origin hostname matches provided allow list
+        if self.allowed_origin_hostnames:
+            origin = env.req.headers.get('Origin')
+            if origin_hostname_is_allowed(origin, self.allowed_origin_hostnames):
+                env.resp.headers["Access-Control-Allow-Origin"] = origin
+                env.resp.headers["Access-Control-Expose-Headers"] = TUS_EXPOSE_HEADERS
 
         if method == 'POST':
             self.post(env)
