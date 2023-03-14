@@ -191,7 +191,7 @@ class TusMiddleware(object):
         # 'concatenation-unfinished',  # todo
     ]
 
-    def __init__(self, app, upload_path, api_base='', tmp_dir='/tmp/upload', expire=DEFAULT_EXPIRE, send_file=False, max_size=2**30):
+    def __init__(self, app, upload_path, api_base='', tmp_dir='/tmp/upload', expire=DEFAULT_EXPIRE, send_file=False, max_size=2**30, do_cleanup=False):
         self.app = app
         self.tmp_dir = tmp_dir
         self.api_base = api_base
@@ -199,6 +199,7 @@ class TusMiddleware(object):
         self.expire = expire
         self.send_file = send_file
         self.max_size = max_size
+        self.do_cleanup = do_cleanup
 
         if not os.path.exists(tmp_dir):
             os.makedirs(tmp_dir)
@@ -596,7 +597,8 @@ class TusMiddleware(object):
         env.resp.status = '%i %s' % (error.status_code, error.reason)
 
     def cleanup(self):
-        for fname in os.listdir(self.tmp_dir):
-            fpath = os.path.join(self.tmp_dir, fname)
-            if os.path.isfile(fpath) and time.time() - os.path.getmtime(fpath) > self.expire:
-                os.remove(fpath)
+        if self.do_cleanup:
+            for fname in os.listdir(self.tmp_dir):
+                fpath = os.path.join(self.tmp_dir, fname)
+                if os.path.isfile(fpath) and time.time() - os.path.getmtime(fpath) > self.expire:
+                    os.remove(fpath)
