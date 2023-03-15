@@ -60,3 +60,13 @@ flask ::
         upload_path='/upload_resumable',
         tmp_dir='/tmp/upload',
     )
+
+
+History
+-------
+
+
+---------------------
+0.5.5 (2023-03-15)
+---------------------
+* Don't cleanup uploaded files on every POST request.
